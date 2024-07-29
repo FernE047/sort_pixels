@@ -1,0 +1,36 @@
+body {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    font-family: Arial, sans-serif;
+}
+
+#canvas {
+    border: 1px solid black;
+    margin-top: 20px;
+}
+
+/* Style the div containing the buttons */
+div {
+    display: flex;
+    justify-content: space-around;
+    gap: 5px;
+    margin: 5px 0;
+}
+
+/* Style the buttons inside the div */
+div button {
+    padding: 10px 5px;
+    font-size: 8px;
+    border: none;
+    border-radius: 5px;
+    background-color: #007BFF;
+    color: white;
+    cursor: pointer;
+    transition: background-color 0.3s ease;
+}
+
+/* Change the background color of the buttons on hover */
+div button:hover {
+    background-color: #0056b3;
+}
