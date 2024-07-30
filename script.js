@@ -2,6 +2,9 @@
 
 function_map ={
     'Shuffle': shuffleImage,
+    'PartialShuffle': partialShuffle,
+    'RandomPartialShuffle': halfShuffle,//randomPartialShuffle,
+    'HalfShuffle': halfShuffle,
     'unShuffle': unshuffleImage,
     'Selection': selectionSort,
     'DoubleSelection': doubleSelectionSort,
@@ -147,6 +150,36 @@ function* shuffleImage() {
     image_data.update();
     for (let i = index1; i < image_data.size; i ++) {
         const j = image_data.random_index();
+        image_data.swap_pixels(i,j);
+        info(`Swapping Pixels ${i} and ${j}`);
+        yield* handleRedraw(image_data);
+    }
+    index1 += image_data.step;
+}
+
+function* halfShuffle() {
+    image_data = new Image_data(img, ctx);
+    let index1 = 0;
+    image_data.update();
+    for (let i = index1; i < image_data.size/2; i ++) {
+        const j = image_data.random_index();
+        image_data.swap_pixels(i,j);
+        info(`Swapping Pixels ${i} and ${j}`);
+        yield* handleRedraw(image_data);
+    }
+    index1 += image_data.step;
+}
+
+function* partialShuffle(){
+    image_data = new Image_data(img, ctx);
+    let index1 = 0;
+    image_data.update();
+    min_lim = Math.floor(image_data.size * 0.2);
+    max_lim = Math.floor(image_data.size * 0.4);
+    for (let i = index1; i < image_data.size; i ++) {
+        if(i >= min_lim && i <= max_lim) continue
+        let j = image_data.random_index();
+        while(j >= min_lim && j <= max_lim) j = image_data.random_index();
         image_data.swap_pixels(i,j);
         info(`Swapping Pixels ${i} and ${j}`);
         yield* handleRedraw(image_data);
