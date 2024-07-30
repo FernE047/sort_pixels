@@ -1,3 +1,5 @@
+//awesome site, save later: https://html.spec.whatwg.org/multipage/canvas.html#canvasrenderingcontext2d
+
 function_map ={
     'Shuffle': shuffleImage,
     'unShuffle': unshuffleImage,
@@ -5,7 +7,9 @@ function_map ={
     'DoubleSelection': doubleSelectionSort,
     'Insertion': insertionSort,
     'BinaryInsertion': binaryInsertionSort,
-    'Bubble': bubbleSort
+    'Bubble': bubbleSort,
+    'Shaker': shakerSort,
+    'Comb': combSort
 }
 Object.keys(function_map).forEach(key => document.getElementById(key).addEventListener('click', () => handleAnimation(function_map[key])));
 
@@ -113,7 +117,7 @@ function handleAnimation(functionToCall) {
 
 function handleImage(e) {
     const canvas = document.getElementById('canvas');
-    ctx = canvas.getContext('2d');
+    ctx = canvas.getContext('2d', { willReadFrequently: true });
     const reader = new FileReader();
 
     reader.onload = function(event) {
@@ -246,7 +250,7 @@ function* binaryInsertionSort(){
 }
 
 function* bubbleSort(){
-    image_data.update_step(1, 500_000);
+    image_data.update_step(5, 500_000);
     image_data.update();
     for(let index1 = 0; index1 < image_data.size - 1; index1++){
         info(`Verificando Pixel ${index1}`);
@@ -255,6 +259,54 @@ function* bubbleSort(){
                 image_data.swap_pixels(i, i + 1);
                 yield* handleRedraw(image_data);
             }
+        }
+    }
+}
+
+function* shakerSort(){
+    image_data.update_step(5, 500_000);
+    image_data.update();
+
+    for(let index1 = 0; index1 < image_data.size - 1; index1++){
+        info(`Verificando Pixel ${index1}`);
+        let numSwaps = 0;
+        for(let i = 0; i < image_data.size - index1 - 1; i++){
+            if(image_data.state[i] > image_data.state[i + 1]){
+                image_data.swap_pixels(i, i + 1);
+                numSwaps++;
+                yield* handleRedraw(image_data);
+            }
+        }
+        for(let i = image_data.size - index1 - 1; i > 0; i--){
+            if(image_data.state[i] < image_data.state[i - 1]){
+                image_data.swap_pixels(i, i - 1);
+                numSwaps++;
+                yield* handleRedraw(image_data);
+            }
+        }
+        if(numSwaps == 0) return info("Array is sorted");
+    }
+}
+
+function* combSort(){
+    image_data.update_step(delay, 500_000);
+    image_data.update();
+    let gap = image_data.size;
+    let numSwaps = 0;
+    while(!(gap == 1 && numSwaps == 0)){
+        numSwaps = 0;
+        for(let index1 = 0; index1 < image_data.size - gap; index1++){
+            info(`Verificando Pixel ${index1}`);
+            const index2 = index1 + gap;
+            if(image_data.state[index1] > image_data.state[index2]){
+                image_data.swap_pixels(index1, index2);
+                numSwaps++;
+                yield* handleRedraw(image_data);
+            }
+        }
+        if(gap!=1){
+            gap = Math.floor(gap / 1.3);
+            console.log(gap);
         }
     }
 }
