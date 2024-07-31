@@ -8,23 +8,37 @@
 </head>
 <body>
     <h1>Pixel Sorting</h1>
-    <input type="file" id="imageInput">
-    <button id="Shuffle">Shuffle</button>
+    <div>
+        <input type="file" id="imageInput">
+        <button id="Shuffle">Shuffle</button>
+        <button id="Partial">Partial</button>
+        <button id="Random">Random</button>
+        <button id="Half">Half</button>
+        <button id="Single">Single</button>
+    </div>
     <div>
         <button id="unShuffle">unShuffle</button>
         <button id="Selection">Selection Sort</button>
         <button id="DoubleSelection">Double Selection Sort</button>
         <button id="Insertion">Insertion Sort</button>
         <button id="BinaryInsertion">Binary Insertion Sort</button>
-        <button id="Bubble">bubble Sort</button>
+        <button id="Bubble">Bubble Sort</button>
     </div>
     <div>
+        <button id="FasterInsertion">Faster Insertion</button>
         <button id="Shaker">Shaker Sort</button>
         <button id="Comb">Comb Sort</button>
     </div>
-    <!-- just a label to put information -->
-    <label id="info"> Hello world!</label>
-    <canvas id="canvas"></canvas>
+    <div class="container">
+        <canvas id="canvas"></canvas>
+        <div class="info-container">
+            <label id="Title">Hello world!</label>
+            <label id="Width">Width: 0ms</label>
+            <label id="Height">Height: 0ms</label>
+            <label id="Size">Size: 0ms</label>
+            <label id="Time">Time: 0ms</label>
+        </div>
+    </div>
     <script src="script.js"></script>
 </body>
 </html>
