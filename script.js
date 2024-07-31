@@ -57,7 +57,7 @@ class Image_data {
         this.maxStep = Math.floor(this.size * delay);
         this.state = new Array(this.size).fill(0);
         this.path = this.make_path();
-        this.state = this.state.map((a,i) => {return this.path[i]});
+        this.state = this.state.map((a,i) => {return i});
         this.step = 0;
         this.writes = 0;
         this.beginTime = performance.now();
@@ -98,14 +98,12 @@ class Image_data {
     }
     
     swap_pixels(index1, index2) {
-        index1 = this.path[index1];
-        index2 = this.path[index2];
-        const index4x1 = index1 * 4;
-        const index4x2 = index2 * 4;
+        const index1_img = this.path[this.state[index1]] * 4;
+        const index2_img = this.path[this.state[index2]] * 4;
         for (let j = 0; j < 4; j++){
-            const temp = this.data[index4x1+j];
-            this.data[index4x1+j] = this.data[index4x2+j];
-            this.data[index4x2+j] = temp;
+            const temp = this.data[index1_img+j];
+            this.data[index1_img+j] = this.data[index2_img+j];
+            this.data[index2_img+j] = temp;
         }
         const temp = this.state[index1];
         this.state[index1] = this.state[index2];
@@ -136,12 +134,6 @@ class Image_data {
         return test;
     }
 
-    insert(index1, index2){
-        const index4x1 = index1;
-        const index4x2 = index2;
-        for (let j = index4x1; j > index4x2; j--) this.swap_pixels(j, j+1);
-    }
-
     reset_stats(){
         this.reads = 0;
         this.writes = 0;
@@ -151,7 +143,7 @@ class Image_data {
     }
 
     get_value(index){
-        return this.state[this.path[index]];
+        return this.state[index];
     }
 }
 
