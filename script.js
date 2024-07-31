@@ -64,27 +64,6 @@ class Image_data {
         this.endTime = performance.now();
     }
 
-    make_path(){
-        const path = new Array(this.size);
-        const path_type = getActivatedPath();
-        switch(path_type){
-            case "horizontal":
-                for(let i = 0; i < this.size; i++) path[i] = i;
-                break;
-            case "vertical":
-                let i = 0;
-                for(let x = 0; x < this.width; x++){
-                    for(let y = 0; y < this.height; y++){
-                        path[i] = x + y * this.width;
-                        i++;
-                    }
-                }
-                break;
-        }
-        console.log(path);
-        return path;
-    }
-
     set_speed(delay_local,limit) {
         if(limit === undefined) limit = 1000;
         this.maxStep = Math.floor(this.size * delay_local);
@@ -144,6 +123,60 @@ class Image_data {
 
     get_value(index){
         return this.state[index];
+    }
+
+    make_path(){
+        const path = new Array(this.size);
+        const path_type = getActivatedPath();
+        switch(path_type){
+            case "horizontal":{
+                for(let i = 0; i < this.size; i++) path[i] = i;
+                break;
+            }
+            case "vertical":{
+                let i = 0;
+                for(let x = 0; x < this.width; x++){
+                    for(let y = 0; y < this.height; y++){
+                        path[i] = x + y * this.width;
+                        i++;
+                    }
+                }
+                break;
+            }
+            case "diagonal":{
+                let i = 0;
+                let x = 0;
+                let y = 0;
+                let big_x = 0;
+                while(i < this.size){
+                    path[i] = x + y * this.width;
+                    i++;
+                    x++;
+                    y++;
+                    if(this.height > this.width){
+                        if(x == this.width){
+                            x = 0;
+                        }
+                        if(y == this.height){
+                            y = 0;
+                            big_x++;
+                            x = big_x;
+                        }
+                    }else{
+                        if(y == this.height){
+                            y = 0;
+                        }
+                        if(x == this.width){
+                            x = 0;
+                            big_x++;
+                            y = big_x;
+                        }
+                    }
+                }
+            }
+        }
+        console.log(path);
+        return path;
     }
 }
 
@@ -320,7 +353,7 @@ function* binaryInsertionSort(){
     }
 }
 
-function* fasterInsertionSort(){
+function* fasterInsertionSort(){ //only works with horizontal path
     img_dt.set_speed(delay);
     for(let index1 = 1; index1 < img_dt.size; index1++){
         let value = img_dt.get_value(index1);
