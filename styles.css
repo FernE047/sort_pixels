@@ -36,3 +36,26 @@ div button {
 div button:hover {
     background-color: #0056b3;
 }
+
+/* Container for canvas and info div */
+.container {
+    display: flex;
+    align-items: flex-start;
+    margin-top: 20px;
+}
+
+/* Info container next to the canvas */
+.info-container {
+    margin-left: 20px;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+
+/* Style for the labels inside the info container */
+.info-container label {
+    font-size: 14px;
+    background-color: #333;
+    padding: 5px;
+    border-radius: 5px;
+}

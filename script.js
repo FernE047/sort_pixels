@@ -1,16 +1,18 @@
 //awesome site, save later: https://html.spec.whatwg.org/multipage/canvas.html#canvasrenderingcontext2d
 
-function_map ={
-    'Shuffle': shuffleImage,
-    'PartialShuffle': partialShuffle,
-    'RandomPartialShuffle': halfShuffle,//randomPartialShuffle,
-    'HalfShuffle': halfShuffle,
-    'unShuffle': unshuffleImage,
+function_map = {
+    'Shuffle': shuffle,
+    'Partial': partialShuffle,
+    'Random': randomShuffle,
+    'Half': halfShuffle,
+    'Single': singleShuffle,
+    'unShuffle': unshuffle,
     'Selection': selectionSort,
     'DoubleSelection': doubleSelectionSort,
     'Insertion': insertionSort,
     'BinaryInsertion': binaryInsertionSort,
     'Bubble': bubbleSort,
+    'FasterInsertion': fasterInsertionSort,
     'Shaker': shakerSort,
     'Comb': combSort
 }
@@ -18,9 +20,26 @@ Object.keys(function_map).forEach(key => document.getElementById(key).addEventLi
 
 document.getElementById('imageInput').addEventListener('change', handleImage, false);
 
-let image_data, img, ctx;
+let img_dt, img, ctx,image_data_needs_update = false;
 let delay = 1/165
-const label = document.getElementById('info');
+const labels = {};
+["Title","Width","Height","Size","Time"].forEach((label) => labels[label] = document.getElementById(label));
+
+function write_label(text,label_name,measure) {
+    if(measure === undefined) measure = "";
+    const label = labels[label_name];
+    label.innerText = `${label_name}: ${text}${measure}`;
+}
+
+function getActivatedPath() {
+    const radios = document.getElementsByName('path');
+    for (const radio of radios) {
+        if (radio.checked) {
+            return radio.value;
+        }
+    }
+    return null;
+}
 
 class Image_data {
     constructor(img_a, ctx_a) {
@@ -32,14 +51,41 @@ class Image_data {
         this.width = img_a.width;
         this.height = img_a.height;
         this.size = img_a.width * img_a.height;
-        this.sizex4 = this.size * 4;
+        write_label(img.width, "Width","px");
+        write_label(img.height, "Height","px");
+        write_label(img.width * img.height, "Size","px²");
         this.maxStep = Math.floor(this.size * delay);
         this.state = new Array(this.size).fill(0);
-        this.state = this.state.map((a,i) => {return i});
+        this.path = this.make_path();
+        this.state = this.state.map((a,i) => {return this.path[i]});
         this.step = 0;
+        this.writes = 0;
+        this.beginTime = performance.now();
+        this.endTime = performance.now();
     }
 
-    update_step(delay_local,limit) {
+    make_path(){
+        const path = new Array(this.size);
+        const path_type = getActivatedPath();
+        switch(path_type){
+            case "horizontal":
+                for(let i = 0; i < this.size; i++) path[i] = i;
+                break;
+            case "vertical":
+                let i = 0;
+                for(let x = 0; x < this.width; x++){
+                    for(let y = 0; y < this.height; y++){
+                        path[i] = x + y * this.width;
+                        i++;
+                    }
+                }
+                break;
+        }
+        console.log(path);
+        return path;
+    }
+
+    set_speed(delay_local,limit) {
         if(limit === undefined) limit = 1000;
         this.maxStep = Math.floor(this.size * delay_local);
         if(this.maxStep < 1) this.maxStep = 1;
@@ -48,25 +94,23 @@ class Image_data {
             this.maxStep = limit;
         }
         this.step = 0;
-    }
-
-    swap_state(index1, index2) {
-        const temp = this.state[index1];
-        this.state[index1] = this.state[index2];
-        this.state[index2] = temp;
-    }
-    
-    swap_pixels_channel(index1, index2) {
-        const temp = this.data[index1];
-        this.data[index1] = this.data[index2];
-        this.data[index2] = temp;
+        this.update(); // because set_speed is always called before the animation
     }
     
     swap_pixels(index1, index2) {
+        index1 = this.path[index1];
+        index2 = this.path[index2];
         const index4x1 = index1 * 4;
         const index4x2 = index2 * 4;
-        for (let j = 0; j < 4; j++) this.swap_pixels_channel(index4x1 + j, index4x2 + j);
-        this.swap_state(index1, index2);
+        for (let j = 0; j < 4; j++){
+            const temp = this.data[index4x1+j];
+            this.data[index4x1+j] = this.data[index4x2+j];
+            this.data[index4x2+j] = temp;
+        }
+        const temp = this.state[index1];
+        this.state[index1] = this.state[index2];
+        this.state[index2] = temp;
+        this.step += 2;
     }
     
     random_index() {
@@ -83,12 +127,13 @@ class Image_data {
         this.step = 0;
     }
 
-    countSwap(){
-        this.step++;
-    }
-
     is_redraw(){
-        return this.step >= this.maxStep;
+        const test = this.step >= this.maxStep;
+        if(test){
+            this.endTime = performance.now();
+            write_label(((this.endTime - this.beginTime)/1000).toFixed(3), "Time","s");
+        }
+        return test;
     }
 
     insert(index1, index2){
@@ -96,23 +141,38 @@ class Image_data {
         const index4x2 = index2;
         for (let j = index4x1; j > index4x2; j--) this.swap_pixels(j, j+1);
     }
-}
 
-function info(text) {
-    label.innerText = text;
+    reset_stats(){
+        this.reads = 0;
+        this.writes = 0;
+        this.step = 0;
+        this.beginTime = performance.now();
+        write_label(0, "Time","s");
+    }
+
+    get_value(index){
+        return this.state[this.path[index]];
+    }
 }
 
 function handleAnimation(functionToCall) {
     if (!img || !ctx) return console.error('Image not loaded or context not available.');
 
     const functionSort = functionToCall();
+    
+    if(image_data_needs_update) {
+        img_dt = new Image_data(img, ctx);
+        image_data_needs_update = false;
+    }
+
+    img_dt.reset_stats();
 
     function draw() {
         if (!functionSort.next().done) {
-            image_data.redraw();
+            img_dt.redraw();
             requestAnimationFrame(draw); // Schedule the next step
         }
-        image_data.redraw();
+        img_dt.redraw();
     }
 
     draw(); // Start the sorting operation
@@ -131,215 +191,211 @@ function handleImage(e) {
             ctx.drawImage(img, 0, 0);
         }
         img.src = event.target.result;
+        write_label(img.width, "Width","px");
+        write_label(img.height, "Height","px");
+        write_label(img.width * img.height, "Size","px²");
     }
-    
     reader.readAsDataURL(e.target.files[0]);
+    image_data_needs_update = true;
 }
 
-function* handleRedraw(image_data) {
-    image_data.countSwap();
-    if (image_data.is_redraw()) {
+function* swap_process(index1, index2) { 
+    img_dt.swap_pixels(index1, index2);
+    if (img_dt.is_redraw()) {
         yield; // Pause and save the current state
-        image_data.update();
+        img_dt.update();
     }
 }
 
-function* shuffleImage() {
-    image_data = new Image_data(img, ctx);
-    let index1 = 0;
-    image_data.update();
-    for (let i = index1; i < image_data.size; i ++) {
-        const j = image_data.random_index();
-        image_data.swap_pixels(i,j);
-        info(`Swapping Pixels ${i} and ${j}`);
-        yield* handleRedraw(image_data);
+function* shuffle() {
+    img_dt.update();
+    for (let i = 0; i < img_dt.size; i ++) {
+        const j = img_dt.random_index();
+        yield* swap_process(i,j);
     }
-    index1 += image_data.step;
-}
-
-function* halfShuffle() {
-    image_data = new Image_data(img, ctx);
-    let index1 = 0;
-    image_data.update();
-    for (let i = index1; i < image_data.size/2; i ++) {
-        const j = image_data.random_index();
-        image_data.swap_pixels(i,j);
-        info(`Swapping Pixels ${i} and ${j}`);
-        yield* handleRedraw(image_data);
-    }
-    index1 += image_data.step;
 }
 
 function* partialShuffle(){
-    image_data = new Image_data(img, ctx);
-    let index1 = 0;
-    image_data.update();
-    min_lim = Math.floor(image_data.size * 0.2);
-    max_lim = Math.floor(image_data.size * 0.4);
-    for (let i = index1; i < image_data.size; i ++) {
-        if(i >= min_lim && i <= max_lim) continue
-        let j = image_data.random_index();
-        while(j >= min_lim && j <= max_lim) j = image_data.random_index();
-        image_data.swap_pixels(i,j);
-        info(`Swapping Pixels ${i} and ${j}`);
-        yield* handleRedraw(image_data);
+    img_dt.update();
+    const min_lim = Math.floor(img_dt.size * 0.2);
+    const max_lim = Math.floor(img_dt.size * 0.4);
+    for (let i = 0; i < img_dt.size; i ++) {
+        if(i >= min_lim && i <= max_lim) continue;
+        let j = img_dt.random_index();
+        while(j >= min_lim && j <= max_lim) j = img_dt.random_index();
+        yield* swap_process(i,j);
     }
-    index1 += image_data.step;
 }
 
-function* unshuffleImage(){
-    image_data.update_step(delay);
-    let index1 = 0;
-    info(`Verificando Pixel ${index1}`);
-    image_data.update();
-    while(index1 < image_data.size){
-        if(index1 == image_data.state[index1]){
-            index1++;
-            info(`Verificando Pixel ${index1}`);
-            yield* handleRedraw(image_data);
-        }else{
-            const index2 = image_data.state[index1];
-            image_data.swap_pixels(index1, index2);
-            yield* handleRedraw(image_data);
-        }
+function* randomShuffle(){
+    img_dt.update();
+    for (let i = 0; i < img_dt.size/4; i ++) {
+        const k = img_dt.random_index();
+        const j = img_dt.random_index();
+        yield* swap_process(k,j);
+    }
+}
+
+function* halfShuffle(){
+    img_dt.update();
+    for (let i = 0; i < img_dt.size/2; i ++) {
+        const j = img_dt.random_index();
+        yield* swap_process(i,j);
+    }
+}
+
+function* singleShuffle(){
+    img_dt.update();
+    const i = img_dt.random_index();
+    const j = img_dt.random_index();
+    yield* swap_process(i,j);
+}
+
+function* unshuffle(){
+    img_dt.set_speed(delay);
+    let i = 0;
+    while(i < img_dt.size){
+        const j = img_dt.get_value(i);
+        if(i == j) i++;
+        else yield* swap_process(i,j);
     }
 }
 
 function* selectionSort(){
-    image_data.update_step(delay);
-    image_data.update();
-    for(let index1 = 0; index1 < image_data.size; index1++){
-        info(`Verificando Pixel ${index1}`);
+    img_dt.set_speed(delay);
+    for(let index1 = 0; index1 < img_dt.size; index1++){
         let minIndex = index1;
-        for(let i = index1 + 1; i < image_data.size; i++){
-            if(image_data.state[i] < image_data.state[minIndex]){
+        let minValue = img_dt.get_value(index1);
+        for(let i = index1 + 1; i < img_dt.size; i++){
+            const value = img_dt.get_value(i);
+            if(value < minValue){
                 minIndex = i;
+                minValue = value;
             }
         }
-        image_data.swap_pixels(index1, minIndex);
-        yield* handleRedraw(image_data);
+        if(minIndex != index1) yield* swap_process(index1, minIndex);
     }
 }
 
 function* doubleSelectionSort(){
-    image_data.update_step(delay);
-    image_data.update();
-    for(let index1 = 0; index1 < image_data.size/2; index1++){
-        let index2 = image_data.size - index1 - 1;
-        info(`Verificando Pixel ${index1} and ${index2}`);
+    img_dt.set_speed(delay);
+    for(let index1 = 0; index1 < img_dt.size/2; index1++){
+        let index2 = img_dt.size - index1 - 1;
         let minIndex = index1;
+        let minValue = img_dt.get_value(index1);
         let maxIndex = index2;
+        let maxValue = img_dt.get_value(index2);
         for(let i = index1 + 1; i < index2 - 1; i++){
-            if(image_data.state[i] < image_data.state[minIndex]){
+            let value = img_dt.get_value(i);
+            if(value < minValue){
                 minIndex = i;
-            }else if(image_data.state[i] > image_data.state[maxIndex]){
+                minValue = value;
+            }else if(value > maxValue){
                 maxIndex = i;
+                maxValue = value;
             }
         }
-        image_data.swap_pixels(index1, minIndex);
-        yield* handleRedraw(image_data);
-        image_data.swap_pixels(index2, maxIndex);
-        yield* handleRedraw(image_data);
+        if(minIndex != index1) yield* swap_process(index1, minIndex);
+        if(maxIndex != index2) yield* swap_process(index2, maxIndex);
     }
 }
 
 function* insertionSort(){
-    image_data.update_step(15,500_000);
-    image_data.update();
-    for(let index1 = 1; index1 < image_data.size; index1++){
-        info(`Verificando Pixel ${index1}`);
+    img_dt.set_speed(15,500_000);
+    for(let index1 = 1; index1 < img_dt.size; index1++){
+        let value = img_dt.get_value(index1);
         let place_to_insert = index1;
-        while(place_to_insert > 0 && image_data.state[index1] < image_data.state[place_to_insert - 1]){
-            place_to_insert--;
-        }
-        while(place_to_insert < index1){
-            image_data.swap_pixels(place_to_insert, index1);
-            yield* handleRedraw(image_data);
-            place_to_insert++;
-        }
+        while(place_to_insert > 0 && value < img_dt.get_value(place_to_insert - 1)) place_to_insert--;
+        while(place_to_insert < index1) yield* swap_process(index1, place_to_insert++);
     }
 }
 
 function* binaryInsertionSort(){
-    image_data.update_step(15,500_000);
-    image_data.update();
-    for(let index1 = 1; index1 < image_data.size; index1++){
-        info(`Verificando Pixel ${index1}`);
+    img_dt.set_speed(15,500_000);
+    for(let index1 = 1; index1 < img_dt.size; index1++){
+        let value = img_dt.get_value(index1);
         let left = 0;
         let right = index1;
         while(left < right){
             const middle = Math.floor((left + right) / 2);
-            if(image_data.state[index1] < image_data.state[middle]){
+            if(value < img_dt.get_value(middle)){
                 right = middle;
             }else{
                 left = middle + 1;
             }
         }
-        for(let i = left; i < index1; i++){
-            image_data.swap_pixels(i, index1);
-            yield* handleRedraw(image_data);
+        for(let i = left; i < index1; i++) yield* swap_process(index1, i);
+    }
+}
+
+function* fasterInsertionSort(){
+    img_dt.set_speed(delay);
+    for(let index1 = 1; index1 < img_dt.size; index1++){
+        let value = img_dt.get_value(index1);
+        let left = 0;
+        let right = index1;
+        while(left < right){
+            const middle = Math.floor((left + right) / 2);
+            if(value < img_dt.get_value(middle)){
+                right = middle;
+            }else{
+                left = middle + 1;
+            }
+        }
+        const values = img_dt.data.slice(4*index1, 4*(index1 + 1));
+        img_dt.data.copyWithin(4*(left + 1), 4*left, 4*index1);
+        img_dt.data.set(values, 4*left);
+        img_dt.state.copyWithin(left + 1, left, index1);
+        img_dt.state[left] = value;
+        img_dt.step += 1;
+        if (img_dt.is_redraw()) {
+            yield; // Pause and save the current state
+            img_dt.update();
         }
     }
 }
 
 function* bubbleSort(){
-    image_data.update_step(5, 500_000);
-    image_data.update();
-    for(let index1 = 0; index1 < image_data.size - 1; index1++){
-        info(`Verificando Pixel ${index1}`);
-        for(let i = 0; i < image_data.size - index1 - 1; i++){
-            if(image_data.state[i] > image_data.state[i + 1]){
-                image_data.swap_pixels(i, i + 1);
-                yield* handleRedraw(image_data);
-            }
+    img_dt.set_speed(5, 500_000);
+    for(let index1 = 0; index1 < img_dt.size - 1; index1++){
+        for(let i = 0; i < img_dt.size - index1 - 1; i++){
+            if(img_dt.get_value(i) > img_dt.get_value(i + 1)) yield* swap_process(i, i + 1);
         }
     }
 }
 
 function* shakerSort(){
-    image_data.update_step(5, 500_000);
-    image_data.update();
-
-    for(let index1 = 0; index1 < image_data.size - 1; index1++){
-        info(`Verificando Pixel ${index1}`);
+    img_dt.set_speed(5, 500_000);
+    for(let index1 = 0; index1 < img_dt.size - 1; index1++){
         let numSwaps = 0;
-        for(let i = 0; i < image_data.size - index1 - 1; i++){
-            if(image_data.state[i] > image_data.state[i + 1]){
-                image_data.swap_pixels(i, i + 1);
+        for(let i = 0; i < img_dt.size - index1 - 1; i++){
+            if(img_dt.get_value(i) > img_dt.get_value(i + 1)){
+                yield* swap_process(i, i + 1);
                 numSwaps++;
-                yield* handleRedraw(image_data);
             }
         }
-        for(let i = image_data.size - index1 - 1; i > 0; i--){
-            if(image_data.state[i] < image_data.state[i - 1]){
-                image_data.swap_pixels(i, i - 1);
+        for(let i = img_dt.size - index1 - 1; i > 0; i--){
+            if(img_dt.get_value(i) < img_dt.get_value(i - 1)){
+                yield* swap_process(i, i - 1);
                 numSwaps++;
-                yield* handleRedraw(image_data);
             }
         }
-        if(numSwaps == 0) return info("Array is sorted");
     }
 }
 
 function* combSort(){
-    image_data.update_step(delay, 500_000);
-    image_data.update();
-    let gap = image_data.size;
+    img_dt.set_speed(delay, 500_000);
+    let gap = img_dt.size;
     let numSwaps = 0;
     while(!(gap == 1 && numSwaps == 0)){
         numSwaps = 0;
-        for(let index1 = 0; index1 < image_data.size - gap; index1++){
-            info(`Verificando Pixel ${index1}`);
+        for(let index1 = 0; index1 < img_dt.size - gap; index1++){
             const index2 = index1 + gap;
-            if(image_data.state[index1] > image_data.state[index2]){
-                image_data.swap_pixels(index1, index2);
+            if(img_dt.get_value(index1) > img_dt.get_value(index2)){
+                yield* swap_process(index1, index2);
                 numSwaps++;
-                yield* handleRedraw(image_data);
             }
         }
-        if(gap!=1){
-            gap = Math.floor(gap / 1.3);
-            console.log(gap);
-        }
+        if(gap!=1) gap = Math.floor(gap / 1.3);
     }
 }
