@@ -31,6 +31,16 @@ function write_label(text,label_name,measure) {
     label.innerText = `${label_name}: ${text}${measure}`;
 }
 
+function getActivatedPath() {
+    const radios = document.getElementsByName('path');
+    for (const radio of radios) {
+        if (radio.checked) {
+            return radio.value;
+        }
+    }
+    return null;
+}
+
 class Image_data {
     constructor(img_a, ctx_a) {
         this.img = img_a;
@@ -46,11 +56,33 @@ class Image_data {
         write_label(img.width * img.height, "Size","px²");
         this.maxStep = Math.floor(this.size * delay);
         this.state = new Array(this.size).fill(0);
-        this.state = this.state.map((a,i) => {return i});
+        this.path = this.make_path();
+        this.state = this.state.map((a,i) => {return this.path[i]});
         this.step = 0;
         this.writes = 0;
         this.beginTime = performance.now();
         this.endTime = performance.now();
+    }
+
+    make_path(){
+        const path = new Array(this.size);
+        const path_type = getActivatedPath();
+        switch(path_type){
+            case "horizontal":
+                for(let i = 0; i < this.size; i++) path[i] = i;
+                break;
+            case "vertical":
+                let i = 0;
+                for(let x = 0; x < this.width; x++){
+                    for(let y = 0; y < this.height; y++){
+                        path[i] = x + y * this.width;
+                        i++;
+                    }
+                }
+                break;
+        }
+        console.log(path);
+        return path;
     }
 
     set_speed(delay_local,limit) {
@@ -66,6 +98,8 @@ class Image_data {
     }
     
     swap_pixels(index1, index2) {
+        index1 = this.path[index1];
+        index2 = this.path[index2];
         const index4x1 = index1 * 4;
         const index4x2 = index2 * 4;
         for (let j = 0; j < 4; j++){
@@ -117,7 +151,7 @@ class Image_data {
     }
 
     get_value(index){
-        return this.state[index];
+        return this.state[this.path[index]];
     }
 }
 
