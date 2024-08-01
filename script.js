@@ -275,6 +275,21 @@ class Image_data {
                 }
                 break;
             }
+            case "color":{
+                let i = 0;
+                path = [];
+                for(let i = 0; i < this.size; i++){
+                    if(path.includes(i)) continue;
+                    console.log(path.length, this.size - path.length);
+                    const value = this.data.slice(4*i, 4*(i + 1));
+                    for(let j = i; j < this.size; j++){
+                        if(path.includes(j)) continue;
+                        if(this.data.slice(4*j, 4*(j + 1)).every((a,b) => a == value[b])){
+                            path.push(j);
+                        }
+                    }
+                }
+            }
         }
         console.log(path);
         return path;
