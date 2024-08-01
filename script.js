@@ -441,13 +441,8 @@ function* insertionSort(){
     for(let index1 = 1; index1 < img_dt.size; index1++){
         var value = img_dt.get_value(index1);
         let place_to_insert = index1;
-        while((place_to_insert > 0) && (value < img_dt.get_value(place_to_insert - 1))){
-            place_to_insert += -1;
-        }
-        while(place_to_insert < index1){
-            yield* swap_process(place_to_insert,index1);
-            place_to_insert += 1;
-        }
+        while((place_to_insert > 0) && (value < img_dt.get_value(place_to_insert - 1))) place_to_insert--;
+        for(let i = index1; i > place_to_insert; i--) yield* swap_process(i, i - 1);
     }
 }
 
@@ -465,7 +460,8 @@ function* binaryInsertionSort(){
                 left = middle + 1;
             }
         }
-        for(let i = left; i < index1; i++) yield* swap_process(index1, i);
+        for(let i = index1; i > left; i--) yield* swap_process(i, i - 1);
+        //for(let i = left; i < index1; i++) yield* swap_process(index1, i); //this is the same, but different visual effect
     }
 }
 
