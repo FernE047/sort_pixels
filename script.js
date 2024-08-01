@@ -95,6 +95,7 @@ class Image_data {
     }
     
     redraw() {
+        console.log("redraw")
         this.ctx.putImageData(this.imageData, 0, 0);
     }
 
@@ -126,7 +127,7 @@ class Image_data {
     }
 
     make_path(){
-        const path = new Array(this.size);
+        let path = new Array(this.size);
         const path_type = getActivatedPath();
         switch(path_type){
             case "horizontal":{
@@ -137,7 +138,7 @@ class Image_data {
                 let i = 0;
                 for(let x = 0; x < this.width; x++){
                     for(let y = 0; y < this.height; y++){
-                        path[i] = x + y * this.width;
+                        path[i] = xy_to_index(x,y,this);
                         i++;
                     }
                 }
@@ -149,7 +150,7 @@ class Image_data {
                 let y = 0;
                 let big_x = 0;
                 while(i < this.size){
-                    path[i] = x + y * this.width;
+                    path[i] = xy_to_index(x,y,this);
                     i++;
                     x++;
                     y++;
@@ -174,10 +175,119 @@ class Image_data {
                     }
                 }
             }
+            case "random":{
+                for(let i = 0; i < this.size; i++) path[i] = i;
+                for(let i = 0; i < this.size; i++){
+                    const j = Math.floor(Math.random() * this.size);
+                    const temp = path[i];
+                    path[i] = path[j];
+                    path[j] = temp;
+                }
+                break;
+            }
+            case "ladder":{
+                let max = Math.max(this.width,this.height);
+                max += 1 - (max % 2); // ensures that max is odd
+                let x = 0;
+                let y = 0;
+                let dx = 1;
+                let dy = 1;
+                path = [];
+                push_if_valid(x, y, this);
+                x++;
+                while(path.length < this.size){
+                    console.log(path);
+                    push_if_valid(x, y, this);
+                    for(let i = 0; i < dy; i++) push_if_valid(x, y + i + 1, this);
+                    y += dy;
+                    dy++;
+                    for(let i = 0; i < dx; i++) push_if_valid(x - i - 1, y, this);
+                    x = 0;
+                    dx++;
+                    y++;
+                    push_if_valid(x, y, this);
+                    for(let i = 0; i < dx; i++) push_if_valid(x + i + 1, y, this);
+                    x += dx;
+                    dx++;
+                    for(let i = 0; i < dy; i++) push_if_valid(x, y - i - 1, this);
+                    dy++;
+                    y = 0;
+                    x++;
+                }
+            }
+            case "spiral":{
+                let x = 0;
+                let y = 0;
+                let dx = this.width + 1;
+                let dy = this.height;
+                path = [];
+                console.log(path);
+                while(path.length < this.size){
+                    console.log(path);
+                    push_if_valid(x, y, this);
+                    dx-=2;
+                    if(dx <= 0) return path;
+                    for(let i = 0; i < dx; i++) push_if_valid(x + i + 1, y, this);
+                    x += dx;
+                    dy--;
+                    if(dy <= 0) return path;
+                    for(let i = 0; i < dy; i++) push_if_valid(x, y + i + 1, this);
+                    y += dy;
+                    if(path.length >= this.size) return path;
+                    for(let i = 0; i < dx; i++) push_if_valid(x - i - 1, y, this);
+                    x -= dx;
+                    dy--;
+                    if(dy <= 0) return path;
+                    for(let i = 0; i < dy; i++) push_if_valid(x, y - i - 1, this);
+                    y -= dy;
+                    x++;
+                }
+                console.log(path);
+                break;
+            }
+            case "diamond":{
+                let x = Math.floor((this.width + 1) / 2);
+                let y = Math.floor((this.height + 1) / 2);
+                let df = 1;
+                path = [];
+                push_if_valid(x, y, this);
+                y++;
+                while(path.length < this.size){
+                    console.log(x,y);
+                    for(let i = 0; i < df; i++) push_if_valid(x - i - 1, y - i - 1, this);
+                    x -= df;
+                    y -= df;
+                    console.log(x,y);
+                    for(let i = 0; i < df; i++) push_if_valid(x + i + 1, y - i - 1, this);
+                    x += df;
+                    y -= df;
+                    console.log(x,y);
+                    for(let i = 0; i < df; i++) push_if_valid(x + i + 1, y + i + 1, this);
+                    x += df;
+                    y += df;
+                    console.log(x,y);
+                    for(let i = 0; i < df; i++) push_if_valid(x - i - 1, y + i + 1, this);
+                    x -= df;
+                    y += df + 1;
+                    console.log(x,y);
+                    df++;
+                }
+                break;
+            }
         }
         console.log(path);
         return path;
+        function push_if_valid(a,b,img_dt){
+            if(a >= 0 && b >= 0 && a < img_dt.width && b < img_dt.height) path.push(xy_to_index(a,b,img_dt));
+        }
+        function xy_to_index(a,b,img_dt){
+            return a + b * img_dt.width;
+        }
     }
+}
+
+function handlePathChange(){
+    image_data_needs_update = true;
 }
 
 function handleAnimation(functionToCall) {
@@ -328,10 +438,15 @@ function* doubleSelectionSort(){
 function* insertionSort(){
     img_dt.set_speed(15,500_000);
     for(let index1 = 1; index1 < img_dt.size; index1++){
-        let value = img_dt.get_value(index1);
+        var value = img_dt.get_value(index1);
         let place_to_insert = index1;
-        while(place_to_insert > 0 && value < img_dt.get_value(place_to_insert - 1)) place_to_insert--;
-        while(place_to_insert < index1) yield* swap_process(index1, place_to_insert++);
+        while((place_to_insert > 0) && (value < img_dt.get_value(place_to_insert - 1))){
+            place_to_insert += -1;
+        }
+        while(place_to_insert < index1){
+            yield* swap_process(index1, place_to_insert);
+            place_to_insert += 1;
+        }
     }
 }
 
