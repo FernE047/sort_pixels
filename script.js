@@ -77,8 +77,8 @@ class Image_data {
     }
     
     swap_pixels(index1, index2) {
-        const index1_img = this.path[this.state[index1]] * 4;
-        const index2_img = this.path[this.state[index2]] * 4;
+        const index1_img = this.path[index1] * 4;
+        const index2_img = this.path[index2] * 4;
         for (let j = 0; j < 4; j++){
             const temp = this.data[index1_img+j];
             this.data[index1_img+j] = this.data[index2_img+j];
@@ -95,7 +95,6 @@ class Image_data {
     }
     
     redraw() {
-        console.log("redraw")
         this.ctx.putImageData(this.imageData, 0, 0);
     }
 
@@ -154,16 +153,7 @@ class Image_data {
                     i++;
                     x++;
                     y++;
-                    if(this.height > this.width){
-                        if(x == this.width){
-                            x = 0;
-                        }
-                        if(y == this.height){
-                            y = 0;
-                            big_x++;
-                            x = big_x;
-                        }
-                    }else{
+                    if(this.height < this.width){
                         if(y == this.height){
                             y = 0;
                         }
@@ -172,8 +162,18 @@ class Image_data {
                             big_x++;
                             y = big_x;
                         }
+                    }else{
+                        if(x == this.width){
+                            x = 0;
+                        }
+                        if(y == this.height){
+                            y = 0;
+                            big_x++;
+                            x = big_x;
+                        }
                     }
                 }
+                break;
             }
             case "random":{
                 for(let i = 0; i < this.size; i++) path[i] = i;
@@ -214,6 +214,7 @@ class Image_data {
                     y = 0;
                     x++;
                 }
+                break;
             }
             case "spiral":{
                 let x = 0;
@@ -444,7 +445,7 @@ function* insertionSort(){
             place_to_insert += -1;
         }
         while(place_to_insert < index1){
-            yield* swap_process(index1, place_to_insert);
+            yield* swap_process(place_to_insert,index1);
             place_to_insert += 1;
         }
     }
