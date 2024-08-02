@@ -305,7 +305,8 @@ class Image_data {
                 }
                 path = colors.sort((a,b) => b.length - a.length).flat();
             }
-            case "randomTransversal":{
+            case "randomExpansion":
+            case "expansion":{
                 let to_explore = new Set();
                 function push_if_possible(a,b,img_dt){
                     let index = xy_to_index(a,b,img_dt);
@@ -321,8 +322,13 @@ class Image_data {
                 }
                 let x = 0;
                 let y = 0;
-                path = [0];
-                test_directions(0,this);
+                if(path_type == "randomExpansion"){
+                    x = Math.floor(Math.random() * this.width);
+                    y = Math.floor(Math.random() * this.height);
+                }
+                let value = xy_to_index(x,y,this);
+                path = [value];
+                test_directions(value,this);
                 console.log(to_explore);
                 while(to_explore.size > 0){
                     let index = Array.from(to_explore)[Math.floor(Math.random() * to_explore.size)];
@@ -331,6 +337,7 @@ class Image_data {
                     test_directions(index,this);
                     console.log(this.size - path.length);
                 }
+                break;
             }
         }
         console.log(path);
