@@ -305,6 +305,33 @@ class Image_data {
                 }
                 path = colors.sort((a,b) => b.length - a.length).flat();
             }
+            case "randomTransversal":{
+                let to_explore = new Set();
+                function push_if_possible(a,b,img_dt){
+                    let index = xy_to_index(a,b,img_dt);
+                    if(a >= 0 && b >= 0 && a < img_dt.width && b < img_dt.height && !path.includes(index)) to_explore.add(index);
+                }
+                function test_directions(index,img_dt){
+                    let a = index % img_dt.width;
+                    let b = Math.floor(index / img_dt.width);
+                    push_if_possible(a - 1, b, img_dt);
+                    push_if_possible(a + 1, b, img_dt);
+                    push_if_possible(a, b - 1, img_dt);
+                    push_if_possible(a, b + 1, img_dt);
+                }
+                let x = 0;
+                let y = 0;
+                path = [0];
+                test_directions(0,this);
+                console.log(to_explore);
+                while(to_explore.size > 0){
+                    let index = Array.from(to_explore)[Math.floor(Math.random() * to_explore.size)];
+                    path.push(index);
+                    to_explore.delete(index);
+                    test_directions(index,this);
+                    console.log(this.size - path.length);
+                }
+            }
         }
         console.log(path);
         return path;
