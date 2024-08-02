@@ -276,19 +276,34 @@ class Image_data {
                 break;
             }
             case "color":{
-                let i = 0;
-                path = [];
-                for(let i = 0; i < this.size; i++){
-                    if(path.includes(i)) continue;
-                    console.log(path.length, this.size - path.length);
-                    const value = this.data.slice(4*i, 4*(i + 1));
-                    for(let j = i; j < this.size; j++){
-                        if(path.includes(j)) continue;
-                        if(this.data.slice(4*j, 4*(j + 1)).every((a,b) => a == value[b])){
-                            path.push(j);
-                        }
-                    }
+                function compare(color1, index_start, color2){
+                    for(let i = 0; i < 3; i++) if(color1[index_start + i] != color2[i]) return false;
+                    return true;
                 }
+                for(let i = 0; i < this.size; i++) path[i] = i;
+                let newPathSize = 0;
+                const colors = [];
+                while(newPathSize < this.size){
+                    const color = [];
+                    let index = path.shift();
+                    const value = this.data.slice(4*index, 4*(index + 1)-1);
+                    color.push(index);
+                    newPathSize++;
+                    let aux;
+                    let index_comp = 0;
+                    while(index_comp < path.length){
+                        aux = 4*path[index_comp];
+                        if(!compare(this.data, aux, value)){
+                            index_comp++;
+                            continue;
+                        }
+                        const index_to_save = path.splice(index_comp,1)[0];
+                        color.push(index_to_save);
+                        newPathSize++;
+                    }
+                    colors.push(color);
+                }
+                path = colors.sort((a,b) => b.length - a.length).flat();
             }
         }
         console.log(path);
