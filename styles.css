@@ -1,10 +1,37 @@
 body {
     display: flex;
-    flex-direction: column;
+    flex-direction: row;
     align-items: center;
     font-family: Arial, sans-serif;
     background-color: #000;
     color: #fff;
+    overflow-x: auto;
+}
+
+.sidebar-left{
+    display: flex;
+    flex-direction:column;
+    gap: 10px;
+    width: 200px;
+    height: 500px;
+    border-right: 1px solid #ccc;
+}
+
+.sidebar-right {
+    display: flex;
+    flex-direction:column;
+    width: 200px;
+    border-left: 1px solid #ccc;
+}
+
+.scroll-options {
+    display: flex;
+    flex-direction: column;
+    gap:10px;
+    width: 200px;
+    height: 40%;
+    overflow-y: auto; /* Enable vertical scrolling */
+    border-right: 1px solid #ccc;
 }
 
 #canvas {
@@ -12,16 +39,8 @@ body {
     margin-top: 20px;
 }
 
-/* Style the div containing the buttons */
-div {
-    display: flex;
-    justify-content: space-around;
-    gap: 5px;
-    margin: 5px 0;
-}
-
 /* Style the buttons inside the div */
-div button {
+button {
     padding: 10px 5px;
     font-size: 8px;
     border: none;
@@ -33,15 +52,27 @@ div button {
 }
 
 /* Change the background color of the buttons on hover */
-div button:hover {
+button:hover {
     background-color: #0056b3;
 }
 
 /* Container for canvas and info div */
 .container {
+    width: fill-available;
     display: flex;
-    align-items: flex-start;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
     margin-top: 20px;
+}
+
+.record-station {
+    display: flex;
+    flex-direction: row;
+    gap: 10px;
+    justify-content: center;
+    align-items: center;
+    margin-top: 10px;
 }
 
 /* Info container next to the canvas */

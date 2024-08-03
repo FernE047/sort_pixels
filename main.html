@@ -9,49 +9,53 @@
         <script type="module" src="script.js"></script>
     </head>
 <body>
-    <h1>Pixel Sorting</h1>
-    <div>
-        <label><input type="radio" name="path" id="radio_horizontal" value="horizontal" checked> Horizontal</label>
-        <label><input type="radio" name="path" id="radio_vertical" value="vertical"> Vertical</label>
-        <label><input type="radio" name="path" id="radio_diagonal" value="diagonal"> Diagonal</label>
-        <label><input type="radio" name="path" id="radio_random" value="random"> Random</label>
-        <label><input type="radio" name="path" id="radio_ladder" value="ladder"> Ladder</label>
-        <label><input type="radio" name="path" id="radio_spiral" value="spiral"> Spiral</label>
-        <label><input type="radio" name="path" id="radio_diamond" value="diamond"> Diamond</label>
-        <label><input type="radio" name="path" id="radio_color" value="color"> Color</label>
-        <label><input type="radio" name="path" id="radio_expansion" value="expansion"> Expansion</label>
-        <label><input type="radio" name="path" id="radio_randomExpansion" value="randomExpansion"> Random Expansion</label>
-        <label><input type="radio" name="path" id="radio_hilbert" value="hilbert"> Hilbert Curve</label>
+    <div class="sidebar-left">
+        <h1>Options</h1>
+        <div class="scroll-options">
+            <button id="Shuffle">Shuffle</button>
+            <button id="Partial">Partial</button>
+            <button id="Random">Random</button>
+            <button id="Half">Half</button>
+            <button id="Single">Single</button>
+        </div>
+        <div class="scroll-options">
+            <button id="unShuffle" title="unShuffle">unShuffle</button>
+            <button id="Selection" title="Selection">Selection Sort</button>
+            <button id="DoubleSelection" title="DoubleSelection">Double Selection Sort</button>
+            <button id="Insertion" title="Insertion">Insertion Sort</button>
+            <button id="BinaryInsertion" title="BinaryInsertion">Binary Insertion Sort</button>
+            <button id="Bubble" title="Bubble">Bubble Sort</button>
+            <button id="FasterInsertion" title="FasterInsertion">Faster Insertion</button>
+            <button id="Shaker" title="Shaker">Shaker Sort</button>
+            <button id="Comb" title="Comb">Comb Sort</button>
+        </div>
     </div>
-    <div>
-        <input type="file" id="imageInput">
-        <button id="Shuffle">Shuffle</button>
-        <button id="Partial">Partial</button>
-        <button id="Random">Random</button>
-        <button id="Half">Half</button>
-        <button id="Single">Single</button>
-    </div>
-    <div>
-        <button id="unShuffle">unShuffle</button>
-        <button id="Selection">Selection Sort</button>
-        <button id="DoubleSelection">Double Selection Sort</button>
-        <button id="Insertion">Insertion Sort</button>
-        <button id="BinaryInsertion">Binary Insertion Sort</button>
-        <button id="Bubble">Bubble Sort</button>
-    </div>
-    <div>
-        <button id="FasterInsertion">Faster Insertion</button>
-        <button id="Shaker">Shaker Sort</button>
-        <button id="Comb">Comb Sort</button>
+    <div class="sidebar-right">
+        <h1>Lenses</h1>
+        <label><input type="radio" name="lens" id="radio_horizontal" value="horizontal" checked> Horizontal</label>
+        <label><input type="radio" name="lens" id="radio_vertical" value="vertical"> Vertical</label>
+        <label><input type="radio" name="lens" id="radio_diagonal" value="diagonal"> Diagonal</label>
+        <label><input type="radio" name="lens" id="radio_random" value="random"> Random</label>
+        <label><input type="radio" name="lens" id="radio_ladder" value="ladder"> Ladder</label>
+        <label><input type="radio" name="lens" id="radio_spiral" value="spiral"> Spiral</label>
+        <label><input type="radio" name="lens" id="radio_diamond" value="diamond"> Diamond</label>
+        <label><input type="radio" name="lens" id="radio_color" value="color"> Color</label>
+        <label><input type="radio" name="lens" id="radio_expansion" value="expansion"> Expansion</label>
+        <label><input type="radio" name="lens" id="radio_randomExpansion" value="randomExpansion"> Random Expansion</label>
+        <label><input type="radio" name="lens" id="radio_hilbert" value="hilbert"> Hilbert Curve</label>
     </div>
     <div class="container">
-        <canvas id="canvas"></canvas>
-        <div class="info-container">
-            <label id="Title">Hello world!</label>
-            <label id="Width">Width: 0ms</label>
-            <label id="Height">Height: 0ms</label>
-            <label id="Size">Size: 0ms</label>
-            <label id="Time">Time: 0ms</label>
+        <h1>Pixel Sorting</h1>
+        <input type="file" id="imageInput">
+        <div class="record-station">
+            <canvas id="canvas"></canvas>
+            <div class="info-container">
+                <label id="Title">Hello world!</label>
+                <label id="Width">Width: 0ms</label>
+                <label id="Height">Height: 0ms</label>
+                <label id="Size">Size: 0ms</label>
+                <label id="Time">Time: 0ms</label>
+            </div>
         </div>
     </div>
 </body>

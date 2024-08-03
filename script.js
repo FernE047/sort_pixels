@@ -37,8 +37,8 @@ function write_label(text,label_name,measure) {
     label.innerText = `${label_name}: ${text}${measure}`;
 }
 
-function getActivatedPath() {
-    const radios = document.getElementsByName('path');
+function getActivatedLens() {
+    const radios = document.getElementsByName('lens');
     for (const radio of radios) {
         if (radio.checked) {
             return radio.value;
@@ -47,7 +47,7 @@ function getActivatedPath() {
     return null;
 }
 
-function handlePathChange(){
+function handleLensChange(){
     image_data_needs_update = true;
 }
 
@@ -57,7 +57,7 @@ function handleAnimation(functionToCall) {
     const functionSort = functionToCall();
     
     if(image_data_needs_update) {
-        img_dt = new Image_data(img, ctx, getActivatedPath(), write_label);
+        img_dt = new Image_data(img, ctx, getActivatedLens(), write_label);
         image_data_needs_update = false;
     }
 
@@ -226,7 +226,7 @@ function* binaryInsertionSort(){
     }
 }
 
-function* fasterInsertionSort(){ //only works with horizontal path
+function* fasterInsertionSort(){ //only works with horizontal lens
     img_dt.set_speed(delay);
     for(let index1 = 1; index1 < img_dt.size; index1++){
         let value = img_dt.get_value(index1);
