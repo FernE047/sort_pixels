@@ -1,6 +1,12 @@
 //awesome site, save later: https://html.spec.whatwg.org/multipage/canvas.html#canvasrenderingcontext2d
+//npm install -g http-server
+//http-server
+//then have fun at http://localhost:8080/main.html
 
-function_map = {
+
+import { Image_data } from "./Image_data.js";
+
+const function_map = {
     'Shuffle': shuffle,
     'Partial': partialShuffle,
     'Random': randomShuffle,
@@ -21,7 +27,7 @@ Object.keys(function_map).forEach(key => document.getElementById(key).addEventLi
 document.getElementById('imageInput').addEventListener('change', handleImage, false);
 
 let img_dt, img, ctx,image_data_needs_update = false;
-let delay = 1/165
+let delay = 1/165;
 const labels = {};
 ["Title","Width","Height","Size","Time"].forEach((label) => labels[label] = document.getElementById(label));
 
@@ -41,316 +47,6 @@ function getActivatedPath() {
     return null;
 }
 
-class Image_data {
-    constructor(img_a, ctx_a) {
-        this.img = img_a;
-        this.ctx = ctx_a;
-        const imageData = ctx_a.getImageData(0, 0, img_a.width, img_a.height);
-        this.imageData = imageData;
-        this.data = imageData.data;
-        this.width = img_a.width;
-        this.height = img_a.height;
-        this.size = img_a.width * img_a.height;
-        write_label(img.width, "Width","px");
-        write_label(img.height, "Height","px");
-        write_label(img.width * img.height, "Size","px²");
-        this.maxStep = Math.floor(this.size * delay);
-        this.state = new Array(this.size).fill(0);
-        this.path = this.make_path();
-        this.state = this.state.map((a,i) => {return i});
-        this.step = 0;
-        this.writes = 0;
-        this.beginTime = performance.now();
-        this.endTime = performance.now();
-    }
-
-    set_speed(delay_local,limit) {
-        if(limit === undefined) limit = 1000;
-        this.maxStep = Math.floor(this.size * delay_local);
-        if(this.maxStep < 1) this.maxStep = 1;
-        if(this.maxStep > limit){
-            console.log(`Max step overflow : ${this.maxStep}`);
-            this.maxStep = limit;
-        }
-        this.step = 0;
-        this.update(); // because set_speed is always called before the animation
-    }
-    
-    swap_pixels(index1, index2) {
-        const index1_img = this.path[index1] * 4;
-        const index2_img = this.path[index2] * 4;
-        for (let j = 0; j < 4; j++){
-            const temp = this.data[index1_img+j];
-            this.data[index1_img+j] = this.data[index2_img+j];
-            this.data[index2_img+j] = temp;
-        }
-        const temp = this.state[index1];
-        this.state[index1] = this.state[index2];
-        this.state[index2] = temp;
-        this.step += 2;
-    }
-    
-    random_index() {
-        return Math.floor(Math.random() * this.size);
-    }
-    
-    redraw() {
-        this.ctx.putImageData(this.imageData, 0, 0);
-    }
-
-    update() {
-        this.imageData = this.ctx.getImageData(0, 0, this.width, this.height);
-        this.data = this.imageData.data;
-        this.step = 0;
-    }
-
-    is_redraw(){
-        const test = this.step >= this.maxStep;
-        if(test){
-            this.endTime = performance.now();
-            write_label(((this.endTime - this.beginTime)/1000).toFixed(3), "Time","s");
-        }
-        return test;
-    }
-
-    reset_stats(){
-        this.reads = 0;
-        this.writes = 0;
-        this.step = 0;
-        this.beginTime = performance.now();
-        write_label(0, "Time","s");
-    }
-
-    get_value(index){
-        return this.state[index];
-    }
-
-    make_path(){
-        let path = new Array(this.size);
-        const path_type = getActivatedPath();
-        switch(path_type){
-            case "horizontal":{
-                for(let i = 0; i < this.size; i++) path[i] = i;
-                break;
-            }
-            case "vertical":{
-                let i = 0;
-                for(let x = 0; x < this.width; x++){
-                    for(let y = 0; y < this.height; y++){
-                        path[i] = xy_to_index(x,y,this);
-                        i++;
-                    }
-                }
-                break;
-            }
-            case "diagonal":{
-                let i = 0;
-                let x = 0;
-                let y = 0;
-                let big_x = 0;
-                while(i < this.size){
-                    path[i] = xy_to_index(x,y,this);
-                    i++;
-                    x++;
-                    y++;
-                    if(this.height < this.width){
-                        if(y == this.height){
-                            y = 0;
-                        }
-                        if(x == this.width){
-                            x = 0;
-                            big_x++;
-                            y = big_x;
-                        }
-                    }else{
-                        if(x == this.width){
-                            x = 0;
-                        }
-                        if(y == this.height){
-                            y = 0;
-                            big_x++;
-                            x = big_x;
-                        }
-                    }
-                }
-                break;
-            }
-            case "random":{
-                for(let i = 0; i < this.size; i++) path[i] = i;
-                for(let i = 0; i < this.size; i++){
-                    const j = Math.floor(Math.random() * this.size);
-                    const temp = path[i];
-                    path[i] = path[j];
-                    path[j] = temp;
-                }
-                break;
-            }
-            case "ladder":{
-                let max = Math.max(this.width,this.height);
-                max += 1 - (max % 2); // ensures that max is odd
-                let x = 0;
-                let y = 0;
-                let dx = 1;
-                let dy = 1;
-                path = [];
-                push_if_valid(x, y, this);
-                x++;
-                while(path.length < this.size){
-                    console.log(path);
-                    push_if_valid(x, y, this);
-                    for(let i = 0; i < dy; i++) push_if_valid(x, y + i + 1, this);
-                    y += dy;
-                    dy++;
-                    for(let i = 0; i < dx; i++) push_if_valid(x - i - 1, y, this);
-                    x = 0;
-                    dx++;
-                    y++;
-                    push_if_valid(x, y, this);
-                    for(let i = 0; i < dx; i++) push_if_valid(x + i + 1, y, this);
-                    x += dx;
-                    dx++;
-                    for(let i = 0; i < dy; i++) push_if_valid(x, y - i - 1, this);
-                    dy++;
-                    y = 0;
-                    x++;
-                }
-                break;
-            }
-            case "spiral":{
-                let x = 0;
-                let y = 0;
-                let dx = this.width + 1;
-                let dy = this.height;
-                path = [];
-                console.log(path);
-                while(path.length < this.size){
-                    console.log(path);
-                    push_if_valid(x, y, this);
-                    dx-=2;
-                    if(dx <= 0) return path;
-                    for(let i = 0; i < dx; i++) push_if_valid(x + i + 1, y, this);
-                    x += dx;
-                    dy--;
-                    if(dy <= 0) return path;
-                    for(let i = 0; i < dy; i++) push_if_valid(x, y + i + 1, this);
-                    y += dy;
-                    if(path.length >= this.size) return path;
-                    for(let i = 0; i < dx; i++) push_if_valid(x - i - 1, y, this);
-                    x -= dx;
-                    dy--;
-                    if(dy <= 0) return path;
-                    for(let i = 0; i < dy; i++) push_if_valid(x, y - i - 1, this);
-                    y -= dy;
-                    x++;
-                }
-                console.log(path);
-                break;
-            }
-            case "diamond":{
-                let x = Math.floor((this.width + 1) / 2);
-                let y = Math.floor((this.height + 1) / 2);
-                let df = 1;
-                path = [];
-                push_if_valid(x, y, this);
-                y++;
-                while(path.length < this.size){
-                    console.log(x,y);
-                    for(let i = 0; i < df; i++) push_if_valid(x - i - 1, y - i - 1, this);
-                    x -= df;
-                    y -= df;
-                    console.log(x,y);
-                    for(let i = 0; i < df; i++) push_if_valid(x + i + 1, y - i - 1, this);
-                    x += df;
-                    y -= df;
-                    console.log(x,y);
-                    for(let i = 0; i < df; i++) push_if_valid(x + i + 1, y + i + 1, this);
-                    x += df;
-                    y += df;
-                    console.log(x,y);
-                    for(let i = 0; i < df; i++) push_if_valid(x - i - 1, y + i + 1, this);
-                    x -= df;
-                    y += df + 1;
-                    console.log(x,y);
-                    df++;
-                }
-                break;
-            }
-            case "color":{
-                function compare(color1, index_start, color2){
-                    for(let i = 0; i < 3; i++) if(color1[index_start + i] != color2[i]) return false;
-                    return true;
-                }
-                for(let i = 0; i < this.size; i++) path[i] = i;
-                let newPathSize = 0;
-                const colors = [];
-                while(newPathSize < this.size){
-                    const color = [];
-                    let index = path.shift();
-                    const value = this.data.slice(4*index, 4*(index + 1)-1);
-                    color.push(index);
-                    newPathSize++;
-                    let aux;
-                    let index_comp = 0;
-                    while(index_comp < path.length){
-                        aux = 4*path[index_comp];
-                        if(!compare(this.data, aux, value)){
-                            index_comp++;
-                            continue;
-                        }
-                        const index_to_save = path.splice(index_comp,1)[0];
-                        color.push(index_to_save);
-                        newPathSize++;
-                    }
-                    colors.push(color);
-                }
-                path = colors.sort((a,b) => b.length - a.length).flat();
-            }
-            case "randomExpansion":
-            case "expansion":{
-                let to_explore = new Set();
-                function push_if_possible(a,b,img_dt){
-                    let index = xy_to_index(a,b,img_dt);
-                    if(a >= 0 && b >= 0 && a < img_dt.width && b < img_dt.height && !path.includes(index)) to_explore.add(index);
-                }
-                function test_directions(index,img_dt){
-                    let a = index % img_dt.width;
-                    let b = Math.floor(index / img_dt.width);
-                    push_if_possible(a - 1, b, img_dt);
-                    push_if_possible(a + 1, b, img_dt);
-                    push_if_possible(a, b - 1, img_dt);
-                    push_if_possible(a, b + 1, img_dt);
-                }
-                let x = 0;
-                let y = 0;
-                if(path_type == "randomExpansion"){
-                    x = Math.floor(Math.random() * this.width);
-                    y = Math.floor(Math.random() * this.height);
-                }
-                let value = xy_to_index(x,y,this);
-                path = [value];
-                test_directions(value,this);
-                console.log(to_explore);
-                while(to_explore.size > 0){
-                    let index = Array.from(to_explore)[Math.floor(Math.random() * to_explore.size)];
-                    path.push(index);
-                    to_explore.delete(index);
-                    test_directions(index,this);
-                    console.log(this.size - path.length);
-                }
-                break;
-            }
-        }
-        console.log(path);
-        return path;
-        function push_if_valid(a,b,img_dt){
-            if(a >= 0 && b >= 0 && a < img_dt.width && b < img_dt.height) path.push(xy_to_index(a,b,img_dt));
-        }
-        function xy_to_index(a,b,img_dt){
-            return a + b * img_dt.width;
-        }
-    }
-}
-
 function handlePathChange(){
     image_data_needs_update = true;
 }
@@ -361,7 +57,7 @@ function handleAnimation(functionToCall) {
     const functionSort = functionToCall();
     
     if(image_data_needs_update) {
-        img_dt = new Image_data(img, ctx);
+        img_dt = new Image_data(img, ctx, getActivatedPath(), write_label);
         image_data_needs_update = false;
     }
 
@@ -417,8 +113,9 @@ function* shuffle() {
 
 function* partialShuffle(){
     img_dt.update();
-    const min_lim = Math.floor(img_dt.size * 0.2);
-    const max_lim = Math.floor(img_dt.size * 0.4);
+    const mid_point = Math.random() * 0.8 + 0.1;
+    const min_lim = Math.floor(img_dt.size * (mid_point - 0.1));
+    const max_lim = Math.floor(img_dt.size * (mid_point + 0.1));
     for (let i = 0; i < img_dt.size; i ++) {
         if(i >= min_lim && i <= max_lim) continue;
         let j = img_dt.random_index();
