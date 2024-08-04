@@ -8,6 +8,7 @@ import { Image_data } from "./Image_data.js";
 
 const function_map = {
     'Shuffle': shuffle,
+    'ZeroPatience': zeroPatienceShuffle,
     'Partial': partialShuffle,
     'Random': randomShuffle,
     'Half': halfShuffle,
@@ -20,9 +21,16 @@ const function_map = {
     'Bubble': bubbleSort,
     'FasterInsertion': fasterInsertionSort,
     'Shaker': shakerSort,
-    'Comb': combSort
+    'Comb': combSort,
+    'RecursiveQuick': recursiveQuickSort,
+    'Quick': quickSort,
+    'RandomQuick': randomQuickSort,
+    'LayerQuick': layerQuickSort,
+    //'TwoDQuick': twoDQuickSort, this one needs more time to mature
+    'Merge': mergeSort,
 }
 Object.keys(function_map).forEach(key => document.getElementById(key).addEventListener('click', () => handleAnimation(function_map[key])));
+document.getElementsByName('lens').forEach(radio => radio.addEventListener('change', handleLensChange));
 
 document.getElementById('imageInput').addEventListener('change', handleImage, false);
 
@@ -101,6 +109,11 @@ function* swap_process(index1, index2) {
         yield; // Pause and save the current state
         img_dt.update();
     }
+}
+
+function* zeroPatienceShuffle(){
+    img_dt.set_speed(15, 500_000);
+    yield* shuffle();
 }
 
 function* shuffle() {
@@ -296,4 +309,93 @@ function* combSort(){
         }
         if(gap!=1) gap = Math.floor(gap / 1.3);
     }
+}
+
+function* roundQuickSortBase(img_dt, left, right, wrapper){
+    if(left >= right) return;
+    const pivot = img_dt.get_value(left);
+    let i = left + 1;
+    let j = wrapper.j;
+    while(i <= j){
+        let value_i = img_dt.get_value(i);
+        while(value_i < pivot){
+            i++;
+            if(i > j) break;
+            value_i = img_dt.get_value(i);
+        }
+        let value_j = img_dt.get_value(j);
+        while(value_j > pivot){
+            j--;
+            if(j < i) break;
+            value_j = img_dt.get_value(j);
+        }
+        if(i > j) break;
+        yield* swap_process(i, j);
+    }
+    yield* swap_process(left, j);
+    wrapper.j = j;
+}
+
+function* roundQuickSortRecursive(img_dt, left, right, deepness){
+    if(deepness === undefined) deepness = 0;
+    else deepness++;
+    //console.log(deepness);
+    if(deepness > 4000) {
+        throw new Error("Stack overflow");
+    }
+    const wrapper = {j: right};
+    yield* roundQuickSortBase(img_dt, left, right, wrapper);
+    if(left < wrapper.j - 1) yield* roundQuickSortRecursive(img_dt, left, wrapper.j - 1, deepness);
+    if(wrapper.j + 1 < right) yield* roundQuickSortRecursive(img_dt, wrapper.j + 1, right, deepness);
+    deepness--;
+    console.log(deepness);
+}
+
+function* recursiveQuickSort(){
+    img_dt.set_speed(delay, 500_000);
+    yield* roundQuickSortRecursive(img_dt, 0, img_dt.size - 1);
+}
+
+function* roundQuickSort(img_dt, left, right, get_from_stack){
+    if(get_from_stack === undefined) console.error("get_from_stack is undefined");
+    img_dt.set_speed(delay, 500_000);
+    let stack = [];
+    stack.push([left,right]);
+    while(stack.length > 0){
+        [stack, left, right] = get_from_stack(stack);
+        if(left >= right) continue;
+        const wrapper = {j: right};
+        yield* roundQuickSortBase(img_dt, left, right, wrapper);
+        if(wrapper.j + 1 < right) stack.push([wrapper.j + 1, right]);
+        if(left < wrapper.j - 1) stack.push([left, wrapper.j - 1]);
+    }
+}
+
+function* quickSort(){
+    const get_from_stack = (stack) => {
+        const value = stack.pop();
+        return [stack, value[0], value[1]];
+    }
+    yield* roundQuickSort(img_dt, 0, img_dt.size - 1, get_from_stack);
+}
+
+function* randomQuickSort(){
+    const get_from_stack = (stack) => {
+        const index = Math.floor(Math.random() * stack.length);
+        const value = stack[index];
+        if (index > 0 && index < stack.length) {
+            stack = stack.slice(0, index).concat(stack.slice(index + 1));
+        }else if (index == 0) stack = stack.slice(1)
+        else stack = stack.slice(0, stack.length - 1);
+        return [stack, value[0], value[1]];
+    }
+    yield* roundQuickSort(img_dt, 0, img_dt.size - 1, get_from_stack);
+}
+
+function* layerQuickSort(){
+    const get_from_stack = (stack) => {
+        const value = stack.shift();
+        return [stack, value[0], value[1]];
+    }
+    yield* roundQuickSort(img_dt, 0, img_dt.size - 1, get_from_stack);
 }
