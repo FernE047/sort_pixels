@@ -128,6 +128,13 @@ export class Image_data {
         console.log(lens);
         return lens;
     }
+
+    is_sorted(){
+        for(let i = 0; i < this.size - 1; i++){
+            if(this.state[i] > this.state[i + 1]) return false;
+        }
+        return true;
+    }
 }
 
 function horizontal_lens(img_dt){

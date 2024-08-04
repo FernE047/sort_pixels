@@ -13,7 +13,7 @@ const function_map = {
     'Random': randomShuffle,
     'Half': halfShuffle,
     'Single': singleShuffle,
-    'unShuffle': unshuffle,
+    'Cycle': cycleSort,
     'Selection': selectionSort,
     'DoubleSelection': doubleSelectionSort,
     'Heap': heapSort,
@@ -21,21 +21,35 @@ const function_map = {
     'BinaryInsertion': binaryInsertionSort,
     'FasterInsertion': fasterInsertionSort,
     'Shell': shellSort,
+    'Gnome': gnomeSort,
     'Bubble': bubbleSort,
     'Shaker': shakerSort,
     'Comb': combSort,
     'RecursiveQuick': recursiveQuickSort,
-    'Quick': quickSort,
+    'Quick': quickSort, //visualization is similar to Tree sort
     'RandomQuick': randomQuickSort,
     'LayerQuick': layerQuickSort,
     //'TwoDQuick': twoDQuickSort, this one needs more time to mature
     'Merge': mergeSort,
+    //'MergeInsertion': mergeInsertionSort, //TODO
     'radixLSD10': radixLSD10Sort,
     'radixLSD4': radixLSD4Sort,
     'radixLSD2': radixLSD2Sort,
     'radixMSD10': radixMSD10Sort,
     'radixMSD4': radixMSD4Sort,
     'radixMSD2': radixMSD2Sort,
+    'Bucket': bucketSort,
+    'Counting': countingSort,
+    'Spaghetti': spaghettiSort,
+    'Gravity': gravitySort,
+    'Pancake': pancakeSort,
+    'Bogo': bogoSort,
+    //'Patience': patienceSort, //TODO
+    'Exchange': exchangeSort,
+    'ExchangeReverse': exchangeReverseSort,
+    'OddEven': oddEvenSort,
+    'Circle': circleSort,
+    'Tournament': tournamentSort,
 }
 
 Object.keys(function_map).forEach(key => document.getElementById(key).addEventListener('click', () => handleAnimation(function_map[key])));
@@ -184,7 +198,7 @@ function* singleShuffle(){
     yield* swap_process(i,j);
 }
 
-function* unshuffle(){
+function* cycleSort(){
     img_dt.set_speed(1/100);
     let i = 0;
     while(i < img_dt.size){
@@ -302,6 +316,19 @@ function* shellSort(){
                 yield* swap_process(index2, index2 - gap);
                 index2 -= gap;
             }
+        }
+    }
+}
+
+function* gnomeSort(){
+    img_dt.set_speed(5, 500_000);
+    let index = 0;
+    while(index < img_dt.size){
+        if(index == 0) index++;
+        if(img_dt.get_value(index) >= img_dt.get_value(index - 1)) index++;
+        else{
+            yield* swap_process(index, index - 1);
+            index--;
         }
     }
 }
@@ -590,4 +617,165 @@ function* radixMSD4Sort(){
 function* radixMSD2Sort(){
     img_dt.set_speed(delay, 500_000);
     yield* radixMSDSort(img_dt, 2, 0, img_dt.size - 1);
+}
+
+function* bucketSort(){
+    img_dt.set_speed(delay, 500_000);
+    yield* radixMSDSort(img_dt, 40, 0, img_dt.size - 1);
+}
+
+function* countingSort(){
+    img_dt.set_speed(delay, 500_000);
+    yield* radixMSDSort(img_dt, img_dt.size, 0, img_dt.size - 1);
+}
+
+function* spaghettiSort(){ //this one is a joke, but works
+    img_dt.set_speed(delay, 500_000);
+    function hit_the_table(hand){
+        return hand == 0
+    }
+    for(let hand = img_dt.size - 1; !hit_the_table(hand); hand--){
+        for(let noddle = 0; noddle < hand; noddle++){
+            let noddle_height = img_dt.get_value(noddle);
+            if(noddle_height == hand) {
+                console.log(hand);
+                yield* swap_process(hand, noddle);
+                break;
+            }
+        }
+    }
+}
+
+function* gravitySort(){ //same as bubble, but different direction, also a joke
+    img_dt.set_speed(5, 500_000);
+    for(let index1 = 0; index1 < img_dt.size - 1; index1++){
+        for(let i = img_dt.size - 1; i > index1; i--){
+            if(img_dt.get_value(i) < img_dt.get_value(i - 1)) yield* swap_process(i, i - 1);
+        }
+    }
+}
+
+function* pancakeSort(){ //joke. Same as selection, but you flip pancakes :3
+    img_dt.set_speed(5, 500_000);
+    function* flip_pancake(index){
+        for(let i = 0; i < index - i; i++){
+            yield* swap_process(i, index - i);
+        }
+    }
+    for(let index1 = img_dt.size - 1; index1 > 0; index1--){
+        let maxIndex = index1;
+        let maxValue = img_dt.get_value(index1);
+        for(let i = 0; i < index1; i++){
+            const value = img_dt.get_value(i);
+            if(value > maxValue){
+                maxIndex = i;
+                maxValue = value;
+            }
+        }
+        //we flip even when the pancake is already in the right position, because it's fun
+        yield* flip_pancake(maxIndex);
+        yield* flip_pancake(index1);
+    }
+}
+
+function* bogoSort() {
+    img_dt.set_speed(1, 500_000);
+    while (!img_dt.is_sorted()) {
+        for (let i = 0; i < img_dt.size; i ++) {
+            const j = img_dt.random_index();
+            yield* swap_process(i,j);
+        }
+        //limit to one minute LMAO
+        if(img_dt.endTime - img_dt.beginTime > 60_000) break;
+    }
+}
+
+function* exchangeSort(){
+    img_dt.set_speed(5, 500_000);
+    for(let index1 = 0; index1 < img_dt.size; index1++){
+        for(let i = index1 + 1; i < img_dt.size; i++){
+            if(img_dt.get_value(i) < img_dt.get_value(index1)) yield* swap_process(i, index1);
+        }
+    }
+}
+
+function* exchangeReverseSort(){
+    img_dt.set_speed(5, 500_000);
+    for(let index1 = 0; index1 < img_dt.size; index1++){
+        for(let i = img_dt.size - 1; i > index1; i--){
+            if(img_dt.get_value(i) < img_dt.get_value(index1)) yield* swap_process(i, index1);
+        }
+    }
+}
+
+function* oddEvenSort(){
+    let sorted = false;
+    while(!sorted){
+        sorted = true;
+        for(let i = 1; i < img_dt.size - 1; i += 2){
+            if(img_dt.get_value(i) > img_dt.get_value(i + 1)){
+                yield* swap_process(i, i + 1);
+                sorted = false;
+            }
+        }
+        for(let i = 0; i < img_dt.size - 1; i += 2){
+            if(img_dt.get_value(i) > img_dt.get_value(i + 1)){
+                yield* swap_process(i, i + 1);
+                sorted = false;
+            }
+        }
+    }
+}
+
+function* circleSort(){
+    img_dt.set_speed(1/50, 500_000);
+    let sorted = false;
+    function* applyCircle(circleSizeStart,index){
+        const limit = Math.floor(circleSizeStart/2)
+        for(let i = 0; i < limit; i++){
+            const index_2 = index + circleSizeStart - i - 1
+            if(index_2 > img_dt.size - 1) continue;
+            if(img_dt.get_value(index + i) > img_dt.get_value(index_2)){
+                sorted = false;
+                yield* swap_process(index + i, index_2);
+            }
+        }
+    }
+    const maxPower = Math.ceil(Math.log2(img_dt.size));
+    while(!sorted){
+        sorted = true;
+        for(let circlePower = maxPower; circlePower >= 1; circlePower--){
+            const circleSize = Math.pow(2, circlePower);
+            for(let i = 0; i < img_dt.size; i += circleSize){
+                yield* applyCircle(circleSize,i);
+            }
+        }
+    }
+}
+
+function* tournamentSort(){
+    img_dt.set_speed(5, 500_000);
+    let last_winner = undefined; //to save unreachable positions
+    function* applyTournament(spacing,limit){
+        last_winner = limit;
+        let has_print = 0;
+        for(let i = 0; i * spacing < limit; i++){
+            const index_1 = i * spacing * 2;
+            const index_2 = index_1 + spacing;
+            if(has_print <= 1){
+                has_print++;
+            }
+            if(index_2 >= limit){
+                if(last_winner == limit) last_winner = index_1;
+                else if(img_dt.get_value(index_1) < img_dt.get_value(last_winner)) yield* swap_process(index_1, last_winner);
+            }
+            else if(img_dt.get_value(index_1) < img_dt.get_value(index_2)) yield* swap_process(index_1, index_2);
+        }
+    } //each round find one winner
+    for(let tournament = img_dt.size; tournament > 0; tournament--){
+        for(let round = 1; round <= tournament; round *= 2){
+            yield* applyTournament(round, tournament);
+        }
+        yield* swap_process(0, tournament - 1);
+    }
 }
