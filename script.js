@@ -18,8 +18,9 @@ const function_map = {
     'DoubleSelection': doubleSelectionSort,
     'Insertion': insertionSort,
     'BinaryInsertion': binaryInsertionSort,
-    'Bubble': bubbleSort,
     'FasterInsertion': fasterInsertionSort,
+    'Shell': shellSort,
+    'Bubble': bubbleSort,
     'Shaker': shakerSort,
     'Comb': combSort,
     'RecursiveQuick': recursiveQuickSort,
@@ -108,6 +109,20 @@ function* swap_process(index1, index2) {
     if (img_dt.is_redraw()) {
         yield; // Pause and save the current state
         img_dt.update();
+    }
+}
+
+function* copy_auxiliar(index_begin,array){
+    const values = array.map((a) => img_dt.get_value(a));
+    const colors = array.map((a) => img_dt.get_color(a));
+    for(let i = 0; i < array.length; i++){
+        img_dt.state[index_begin + i] = values[i];
+        img_dt.set_color(index_begin + i, colors[i]);
+        img_dt.step += 1;
+        if (img_dt.is_redraw()) {
+            yield; 
+            img_dt.update();
+        }
     }
 }
 
@@ -266,6 +281,23 @@ function* fasterInsertionSort(){ //only works with horizontal lens
     }
 }
 
+function* shellSort(){
+    //TODO: fix, it's not working
+    img_dt.set_speed(delay, 500_000);
+    let gap = img_dt.size;
+    while(gap > 1){
+        gap = Math.floor(gap / 2.3); 
+        for(let index1 = gap; index1 < img_dt.size; index1++){
+            let value = img_dt.get_value(index1);
+            let index2 = index1;
+            while(index2 >= gap && value < img_dt.get_value(index2 - gap)){
+                yield* swap_process(index2, index2 - gap);
+                index2 -= gap;
+            }
+        }
+    }
+}
+
 function* bubbleSort(){
     img_dt.set_speed(5, 500_000);
     for(let index1 = 0; index1 < img_dt.size - 1; index1++){
@@ -356,7 +388,7 @@ function* recursiveQuickSort(){
     yield* roundQuickSortRecursive(img_dt, 0, img_dt.size - 1);
 }
 
-function* roundQuickSort(img_dt, left, right, get_from_stack){
+function* quickSortBase(img_dt, left, right, get_from_stack){
     if(get_from_stack === undefined) console.error("get_from_stack is undefined");
     img_dt.set_speed(delay, 500_000);
     let stack = [];
@@ -376,7 +408,7 @@ function* quickSort(){
         const value = stack.pop();
         return [stack, value[0], value[1]];
     }
-    yield* roundQuickSort(img_dt, 0, img_dt.size - 1, get_from_stack);
+    yield* quickSortBase(img_dt, 0, img_dt.size - 1, get_from_stack);
 }
 
 function* randomQuickSort(){
@@ -389,7 +421,7 @@ function* randomQuickSort(){
         else stack = stack.slice(0, stack.length - 1);
         return [stack, value[0], value[1]];
     }
-    yield* roundQuickSort(img_dt, 0, img_dt.size - 1, get_from_stack);
+    yield* quickSortBase(img_dt, 0, img_dt.size - 1, get_from_stack);
 }
 
 function* layerQuickSort(){
@@ -397,5 +429,38 @@ function* layerQuickSort(){
         const value = stack.shift();
         return [stack, value[0], value[1]];
     }
-    yield* roundQuickSort(img_dt, 0, img_dt.size - 1, get_from_stack);
+    yield* quickSortBase(img_dt, 0, img_dt.size - 1, get_from_stack);
+}
+
+function* merge(img_dt, left, middle, right){ //swap based merge
+    let i = left;
+    let j = middle + 1;
+    let auxiliar = [];
+    while(i <= middle || j <= right){
+        if(i > middle){
+            auxiliar.push(j++);
+            continue;
+        }
+        if(j > right){
+            auxiliar.push(i++);
+            continue;
+        }
+        if(img_dt.get_value(i) > img_dt.get_value(j)) auxiliar.push(j++);
+        else auxiliar.push(i++);
+    }
+    console.log(auxiliar);
+    yield* copy_auxiliar(left, auxiliar);
+}
+
+function* roundMergeSort(img_dt, left, right){
+    if(left >= right) return;
+    const middle = Math.floor((left + right) / 2);
+    yield* roundMergeSort(img_dt, left, middle);
+    yield* roundMergeSort(img_dt, middle + 1, right);
+    yield* merge(img_dt, left, middle, right);
+}
+
+function* mergeSort(){
+    img_dt.set_speed(delay, 500_000);
+    yield* roundMergeSort(img_dt, 0, img_dt.size - 1);
 }

@@ -96,6 +96,16 @@ export class Image_data {
         return this.state[index];
     }
 
+    get_color(index) {
+        const index_img = this.lens[index] * 4;
+        return this.data.slice(index_img, index_img + 3);
+    }
+
+    set_color(index, color) {
+        const index_img = this.lens[index] * 4;
+        for (let i = 0; i < 3; i++) this.data[index_img + i] = color[i];
+    }
+
     make_lens() {
         let lens = new Array(this.size);
         const function_map = {
@@ -127,6 +137,7 @@ function horizontal_lens(img_dt){
 }
 
 function vertical_lens(img_dt){
+    //TODO fix, it's broken for unknown reasons
     let lens = new Array(img_dt.size);
     const width = img_dt.width;
     const height = img_dt.height;
@@ -141,6 +152,7 @@ function vertical_lens(img_dt){
 }
 
 function diagonal_lens(img_dt) {
+    //TODO: fix for when width < height
     let lens = new Array(img_dt.size);
     const index = img_dt.height <= img_dt.width ? 0 : 1;
     const index_2 = [1,0][index]
