@@ -16,6 +16,7 @@ const function_map = {
     'unShuffle': unshuffle,
     'Selection': selectionSort,
     'DoubleSelection': doubleSelectionSort,
+    'Heap': heapSort,
     'Insertion': insertionSort,
     'BinaryInsertion': binaryInsertionSort,
     'FasterInsertion': fasterInsertionSort,
@@ -29,7 +30,14 @@ const function_map = {
     'LayerQuick': layerQuickSort,
     //'TwoDQuick': twoDQuickSort, this one needs more time to mature
     'Merge': mergeSort,
+    'radixLSD10': radixLSD10Sort,
+    'radixLSD4': radixLSD4Sort,
+    'radixLSD2': radixLSD2Sort,
+    'radixMSD10': radixMSD10Sort,
+    'radixMSD4': radixMSD4Sort,
+    'radixMSD2': radixMSD2Sort,
 }
+
 Object.keys(function_map).forEach(key => document.getElementById(key).addEventListener('click', () => handleAnimation(function_map[key])));
 document.getElementsByName('lens').forEach(radio => radio.addEventListener('change', handleLensChange));
 
@@ -463,4 +471,123 @@ function* roundMergeSort(img_dt, left, right){
 function* mergeSort(){
     img_dt.set_speed(1/100, 500_000);
     yield* roundMergeSort(img_dt, 0, img_dt.size - 1);
+}
+
+function* maxHeapify(img_dt, n, i){
+    let largest = i;
+    let left = 2 * i + 1;
+    let right = 2 * i + 2;
+    if(left < n && img_dt.get_value(left) > img_dt.get_value(largest)) largest = left;
+    if(right < n && img_dt.get_value(right) > img_dt.get_value(largest)) largest = right;
+    if(largest != i){
+        yield* swap_process(i, largest);
+        yield* maxHeapify(img_dt, n, largest);
+    }
+}
+
+function* heapSort(){
+    img_dt.set_speed(1/50, 500_000);
+    for(let i = Math.floor(img_dt.size / 2) - 1; i >= 0; i--){
+        yield* maxHeapify(img_dt, img_dt.size, i);
+    }
+    for(let i = img_dt.size - 1; i > 0; i--){
+        yield* swap_process(0, i);
+        yield* maxHeapify(img_dt, i, 0);
+    }
+}
+
+function* radixLSDSort(img_dt, radix){
+    const max_digits = Math.ceil(Math.log2(img_dt.size) / Math.log2(radix));
+    function get_digit(value, digit){
+        return Math.floor(value / Math.pow(radix, digit)) % radix;
+    }
+    const count = Array(radix).fill(0);
+    const output = Array(img_dt.size).fill(0);
+    for(let i = 0; i < max_digits; i++){
+        count.fill(0);
+        for(let j = 0; j < img_dt.size; j++){
+            const value = img_dt.get_value(j);
+            count[get_digit(value, i)]++;
+        }
+        const indexes = count.map((c) => 0);
+        for(let j = 1; j < radix; j++){
+            indexes[j] = indexes[j - 1] + count[j - 1];
+        }
+        for(let j = 0; j <img_dt.size; j++){
+            const value = img_dt.get_value(j);
+            const digit = get_digit(value, i);
+            output[indexes[digit]] = j;
+            indexes[digit]++;
+        }
+        yield* copy_auxiliar(0, output);
+    }
+}
+
+function* radixLSD10Sort(){
+    img_dt.set_speed(delay, 500_000);
+    yield* radixLSDSort(img_dt, 10);
+}
+
+function* radixLSD4Sort(){
+    img_dt.set_speed(delay, 500_000);
+    yield* radixLSDSort(img_dt, 4);
+}
+
+function* radixLSD2Sort(){
+    img_dt.set_speed(delay, 500_000);
+    yield* radixLSDSort(img_dt, 2);
+}
+
+function* radixMSDSort(img_dt, radix, left, right, digit){
+    if(digit === undefined) digit = Math.ceil(Math.log2(img_dt.size) / Math.log2(radix));
+    if(left >= right) return;
+    if(isNaN(right)) return;
+    if(isNaN(left)) return;
+    if(digit < 0) return;
+    function get_digit(value, digit){
+        return Math.floor(value / Math.pow(radix, digit)) % radix;
+    }
+    const count = Array(radix).fill(0);
+    const output = Array(right - left + 1).fill(0);
+    count.fill(0);
+    for(let j = left; j <= right; j++){
+        const value = img_dt.get_value(j);
+        count[get_digit(value, digit)]++;
+    }
+    let indexes = count.map((c) => 0);
+    for(let j = 1; j < radix; j++){
+        indexes[j] = indexes[j - 1] + count[j - 1];
+    }
+    for(let j = left; j <= right; j++){
+        const value = img_dt.get_value(j);
+        const digit_value = get_digit(value, digit);
+        output[indexes[digit_value]] = j;
+        indexes[digit_value]++;
+    }
+    yield* copy_auxiliar(left, output);
+    indexes = count.map((c) => 0);
+    for(let j = 1; j < radix + 1; j++){
+        indexes[j] = indexes[j - 1] + count[j - 1];
+    }
+    for(let j = 0; j < radix; j++){
+        const new_left = left + indexes[j];
+        const new_right = left + indexes[j + 1] - 1;
+        if(new_left >= new_right) continue;
+        yield* radixMSDSort(img_dt, radix, new_left, new_right, digit - 1);
+    }
+}
+
+function* radixMSD10Sort(){
+    img_dt.set_speed(delay, 500_000);
+    yield* radixMSDSort(img_dt, 10, 0, img_dt.size - 1);
+}
+
+function* radixMSD4Sort(){
+    img_dt.set_speed(delay, 500_000);
+    yield* radixMSDSort(img_dt, 4, 0, img_dt.size - 1);
+}
+
+function* radixMSD2Sort(){
+    img_dt.set_speed(delay, 500_000);
+    yield* radixMSDSort(img_dt, 2, 0, img_dt.size - 1);
 }
