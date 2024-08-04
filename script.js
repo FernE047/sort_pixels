@@ -177,7 +177,7 @@ function* singleShuffle(){
 }
 
 function* unshuffle(){
-    img_dt.set_speed(delay);
+    img_dt.set_speed(1/100);
     let i = 0;
     while(i < img_dt.size){
         const j = img_dt.get_value(i);
@@ -282,11 +282,11 @@ function* fasterInsertionSort(){ //only works with horizontal lens
 }
 
 function* shellSort(){
-    //TODO: fix, it's not working
-    img_dt.set_speed(delay, 500_000);
+    img_dt.set_speed(1/50, 500_000);
     let gap = img_dt.size;
     while(gap > 1){
         gap = Math.floor(gap / 2.3); 
+        if(gap == 0) gap = 1;
         for(let index1 = gap; index1 < img_dt.size; index1++){
             let value = img_dt.get_value(index1);
             let index2 = index1;
@@ -327,7 +327,7 @@ function* shakerSort(){
 }
 
 function* combSort(){
-    img_dt.set_speed(delay, 500_000);
+    img_dt.set_speed(1/100, 500_000);
     let gap = img_dt.size;
     let numSwaps = 0;
     while(!(gap == 1 && numSwaps == 0)){
@@ -461,6 +461,6 @@ function* roundMergeSort(img_dt, left, right){
 }
 
 function* mergeSort(){
-    img_dt.set_speed(delay, 500_000);
+    img_dt.set_speed(1/100, 500_000);
     yield* roundMergeSort(img_dt, 0, img_dt.size - 1);
 }

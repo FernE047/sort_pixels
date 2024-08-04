@@ -137,14 +137,13 @@ function horizontal_lens(img_dt){
 }
 
 function vertical_lens(img_dt){
-    //TODO fix, it's broken for unknown reasons
     let lens = new Array(img_dt.size);
     const width = img_dt.width;
     const height = img_dt.height;
     let i = 0;
     for (let x = 0; x < width; x++) {
         for (let y = 0; y < height; y++) {
-            lens[i] = xy_to_index(x, y, this);
+            lens[i] = xy_to_index(x, y, img_dt);
             i++;
         }
     }
@@ -152,7 +151,6 @@ function vertical_lens(img_dt){
 }
 
 function diagonal_lens(img_dt) {
-    //TODO: fix for when width < height
     let lens = new Array(img_dt.size);
     const index = img_dt.height <= img_dt.width ? 0 : 1;
     const index_2 = [1,0][index]
@@ -162,10 +160,12 @@ function diagonal_lens(img_dt) {
     for(let i = 0; i < size; i++){
         lens[i] = xy_to_index(coords[0], coords[1], img_dt);
         [0,1].forEach(j => coords[j]++);
-        if(coords[index_2] != sizes[index_2]) continue;
-        coords[index_2] = 0;
-        coords[2]++;
-        coords[index] = coords[2];
+        if(coords[index] == sizes[index]) coords[index] = 0;
+        if(coords[index_2] == sizes[index_2]){
+            coords[index_2] = 0;
+            coords[2]++;
+            coords[index] = coords[2];
+        }
     }
     return lens;
 }
